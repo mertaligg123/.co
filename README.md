@@ -1,3 +1,5 @@
+python
+Kodu kopyala
 import pygame
 import random
 
@@ -15,6 +17,7 @@ WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
+RED = (255, 0, 0)
 
 # Kuş ayarları
 bird_width = 50
@@ -89,7 +92,26 @@ def check_collision():
 
     return False
 
-# Yeniden başlama fonksiyonu
+# Buton sınıfı
+class Button:
+    def __init__(self, x, y, width, height, color, text):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.color = color
+        self.text = text
+        self.font = pygame.font.SysFont('Arial', 30)
+        
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.color, self.rect)
+        text_surface = self.font.render(self.text, True, BLACK)
+        screen.blit(text_surface, (self.rect.x + (self.rect.width - text_surface.get_width()) // 2, 
+                                  self.rect.y + (self.rect.height - text_surface.get_height()) // 2))
+    
+    def is_clicked(self, pos):
+        if self.rect.collidepoint(pos):
+            return True
+        return False
+
+# Yeniden başlatma fonksiyonu
 def restart_game():
     global bird_y, bird_velocity, pipes, score
     bird_y = screen_height // 2
@@ -97,6 +119,19 @@ def restart_game():
     pipes = []
     score = 0
     add_pipe()
+
+# Oyun bittiğinde çıkan mesaj ve buton
+def game_over_message():
+    game_over_font = pygame.font.SysFont('Arial', 50)
+    message = game_over_font.render("Game Over!", True, RED)
+    screen.blit(message, (screen_width // 4, screen_height // 3))
+
+    restart_button = Button(screen_width // 3, screen_height // 2, 150, 50, (0, 255, 0), "Restart")
+    restart_button.draw(screen)
+    
+    pygame.display.update()
+
+    return restart_button
 
 # Ana oyun fonksiyonu
 def game_loop():
@@ -119,8 +154,6 @@ def game_loop():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:  # Boşluk tuşuna basıldığında kuş zıplar
                     bird_velocity = jump_strength
-                if event.key == pygame.K_r:  # R tuşuna basıldığında oyunu yeniden başlat
-                    restart_game()
 
         # Kuşun hareketini hesapla
         bird_velocity += gravity
@@ -133,7 +166,19 @@ def game_loop():
 
         # Çarpışma kontrolü
         if check_collision():
-            game_over_message()
+            restart_button = game_over_message()
+
+            # Yeniden başlama butonuna tıklama kontrolü
+            restart = False
+            while not restart:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                        restart = True
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if restart_button.is_clicked(event.pos):
+                            restart_game()
+                            restart = True
 
         # Kuşu ve boruları çiz
         draw_bird(bird_y)
@@ -147,18 +192,6 @@ def game_loop():
         clock.tick(60)  # FPS (Frames Per Second)
 
     pygame.quit()
-
-# Oyun bittiğinde çıkan mesaj
-def game_over_message():
-    game_over_font = pygame.font.SysFont('Arial', 50)
-    message = game_over_font.render("Game Over!", True, (255, 0, 0))
-    screen.blit(message, (screen_width // 4, screen_height // 3))
-
-    restart_font = pygame.font.SysFont('Arial', 30)
-    restart_message = restart_font.render("Press 'R' to Restart", True, BLACK)
-    screen.blit(restart_message, (screen_width // 4, screen_height // 2))
-
-    pygame.display.update()
 
 # Oyun başlatma
 game_loop()
